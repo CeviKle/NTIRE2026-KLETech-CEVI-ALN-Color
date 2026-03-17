@@ -1,73 +1,119 @@
-import torch
-import argparse
-import torch.nn as nn
-from torch.utils.data import DataLoader
-from torchvision.utils import save_image as imwrite
 import os
-import time
-import re
-from torchvision import transforms
-from test_dataset import dehaze_test_dataset
+import glob
+import torch
+from PIL import Image
+import torchvision.transforms as T
+from torch.utils.data import Dataset, DataLoader
+import torch.nn.functional as F
+from torch.amp import autocast
+
 from model import final_net
 
 
-parser = argparse.ArgumentParser(description='Shadow')
-parser.add_argument('--test_dir', type=str, default='./ShadowDataset/test/')
-parser.add_argument('--output_dir', type=str, default='results/')
-parser.add_argument('-test_batch_size', help='Set the testing batch size', default=1, type=int)
-args = parser.parse_args()
-output_dir =args.output_dir
-if not os.path.exists(output_dir + '/'):
-    os.makedirs(output_dir + '/', exist_ok=True)
-test_dir = args.test_dir
-test_batch_size = args.test_batch_size
+# =====================================================
+# Dataset
+# =====================================================
 
-test_dataset = dehaze_test_dataset(test_dir)
-test_loader = DataLoader(dataset=test_dataset, batch_size=test_batch_size, shuffle=False, num_workers=0)
+class TestDataset(Dataset):
+    def __init__(self, input_root):
+        self.to_tensor = T.ToTensor()
 
-device = 'cuda:0'
-print(device)
+        # Only load PNG images, ignore Thumbs.db
+        self.images = sorted(
+            [f for f in glob.glob(os.path.join(input_root, "*.png")) if "Thumbs" not in f]
+        )
 
-model = final_net()
+        print("Total test images:", len(self.images))
 
-try:
-    model.remove_model.load_state_dict(torch.load(os.path.join('weights', 'shadowremoval.pkl'), map_location='cpu'), strict=True)
-    print('loading removal_model success')
-except:
-    print('loading removal_model error')
+    def __len__(self):
+        return len(self.images)
+
+    def __getitem__(self, idx):
+        path = self.images[idx]
+        name = os.path.basename(path)
+
+        img = Image.open(path).convert("RGB")
+        img = self.to_tensor(img)
+
+        return img, name
 
 
-try:
-    model.enhancement_model.load_state_dict(torch.load(os.path.join('weights', 'refinement.pkl'), map_location='cpu'), strict=True)
-    print('loading enhancement model success')
-except:
-    print('loading enhancement model error')
+# =====================================================
+# Model Forward
+# =====================================================
 
-model = model.to(device)
+@torch.no_grad()
+def run_model(model, x, device):
+    with autocast(device_type=device.type if hasattr(device, "type") else "cuda"):
+        _, out = model(x)
+    return out
 
-total_time = 0
-with torch.no_grad():
+
+# =====================================================
+# Inference
+# =====================================================
+
+def inference():
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print("Device:", device)
+
+    # Load model
+    model = final_net().to(device)
+    checkpoint_path = "NewCheckpoints/final_net_epoch2.pth"
+    print("Loading checkpoint:", checkpoint_path)
+
+    ckpt = torch.load(checkpoint_path, map_location=device)
+
+    # Handle both dict checkpoint and direct state dict
+    if isinstance(ckpt, dict) and "model_state_dict" in ckpt:
+        model.load_state_dict(ckpt["model_state_dict"], strict=False)
+    else:
+        model.load_state_dict(ckpt, strict=False)
+
     model.eval()
 
-    start = time.time()
-    for batch_idx, (input, name) in enumerate(test_loader):
-        print(name[0])
-        input = input.to(device)
-        frame_out = model(input)
-        frame_out = frame_out.to(device)
-    
-        name = re.findall("\d+",str(name))
-        imwrite(frame_out, os.path.join(output_dir, str(name[0])+'.png'), range=(0, 1))
+    # Dataset folder (flat)
+    dataset = TestDataset("/NTIRE2026/C3_ALN_Color/NTIRE26-cl3an-test-in")
+
+    loader = DataLoader(
+        dataset,
+        batch_size=1,
+        shuffle=False,
+        num_workers=4,
+        pin_memory=True
+    )
+
+    os.makedirs("Tested_results", exist_ok=True)
+
+    for count, (img, name) in enumerate(loader, 1):
+        img = img.to(device)
+
+        _, _, h, w = img.shape
+
+        # pad to multiple of 32
+        pad = 32
+        h_pad = (pad - h % pad) % pad
+        w_pad = (pad - w % pad) % pad
+        img = F.pad(img, (0, w_pad, 0, h_pad), mode="reflect")
+
+        out = run_model(model, img, device)
+
+        # remove padding
+        out = out[:, :, :h, :w]
+        out = torch.clamp(out, 0, 1)
+
+        out_img = (out.detach().cpu() * 255).round().byte()
+        out_img = out_img.squeeze(0).permute(1, 2, 0).numpy()
+
+        save_path = os.path.join("Tested_results", name[0])
+        Image.fromarray(out_img).save(save_path)
+
+        if count % 10 == 0:
+            print(f"Processed {count} images")
+
+    print("\nInference completed")
+    print("Total images saved:", count)
 
 
-
-
-
-
-
-
-
-
-
-
-
+if __name__ == "__main__":
+    inference()

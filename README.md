@@ -27,14 +27,29 @@ We adopt a deep learning based **two-stage illumination normalization network (A
 ## 3. Installation
 
 ```
-git clone <repo-url>
-cd NTIRE_ALN
+git clone https://github.com/CeviKle/NTIRE2026-KLETech-CEVI-ALN-Color.git
+cd NTIRE2026-KLETech-CEVI-ALN-Color
 pip install -r requirements.txt
 ```
 
 ---
 
-## 4. GPU Usage
+## 4. Pretrained Model Weights
+
+Download the trained model weights from the following link:
+
+**Model Weights:**  
+https://drive.google.com/file/d/1hP7AXxvBXCk4w1nV3prxCH0D3mVcNv5n/view?usp=drive_link
+
+After downloading, place the weights inside:
+
+```
+NewCheckpoints/
+```
+
+---
+
+## 5. GPU Usage
 
 * **GPU 0 → Training**
 * **GPU 1 → Validation / Inference**
@@ -43,15 +58,15 @@ This setup allows training and evaluation to run independently.
 
 ---
 
-## 5. Training
+## 6. Training
 
-### 5.1 Start Training
+### 6.1 Start Training
 
 ```
 CUDA_VISIBLE_DEVICES=0 python train.py
 ```
 
-### 5.2 Resume Training
+### 6.2 Resume Training
 
 ```
 CUDA_VISIBLE_DEVICES=0 python train.py \
@@ -60,7 +75,7 @@ CUDA_VISIBLE_DEVICES=0 python train.py \
 
 ---
 
-## 6. Dataset
+## 7. Dataset
 
 We use the **official NTIRE 2026 Ambient Lighting Normalization dataset**.
 
@@ -84,7 +99,7 @@ C3_ALN_Color/
 
 ---
 
-## 7. Validation
+## 8. Validation
 
 Validation is performed on:
 
@@ -100,7 +115,7 @@ CUDA_VISIBLE_DEVICES=1 python inference.py
 
 ---
 
-## 8. Inference Pipeline
+## 9. Inference Pipeline
 
 During inference, the trained model processes the input image and generates an illumination-normalized output.
 
@@ -112,7 +127,18 @@ The model is fully convolutional and supports variable image resolutions.
 
 ---
 
-## 9. Output Location
+## 10. Results
+
+Download the generated results used for submission:
+
+**Results Download Link:**  
+https://drive.google.com/file/d/1hOPNNr6sxB4vVn_NWBfvyS8BXDd10-3e/view?usp=drive_link
+
+The results include all required outputs for evaluation.
+
+---
+
+## 11. Output Location
 
 Outputs are saved in:
 
@@ -128,7 +154,7 @@ find runs/ -type f | grep -iE "\.png$|\.jpg$"
 
 ---
 
-## 10. Submission
+## 12. Submission
 
 Prepare:
 
@@ -143,13 +169,30 @@ Ensure:
 
 ---
 
-## 11. References
+## 13. Team Information
+
+**Team Name:** KLETech-CEVI  
+
+**Team Leader:**  
+Saiprasad Meesiyawar  
+
+**Team Members:**  
+- Mohammed Yaseen  
+- Nikhil Akalwadi  
+- Ramesh Ashok Tabib  
+- Uma Mudenagudi  
+
+CodaBench Username: **jnzx78**
+
+---
+
+## 14. References
 
 * Bao et al., Frequency-Prior Enhanced Ambient Lighting Normalization (CVPRW 2025)
 * Vasluianu et al., Towards Image Ambient Lighting Normalization (ECCV 2024)
 
 ---
 
-## 13. Acknowledgement
+## 15. Acknowledgement
 
 This work is inspired by recent NTIRE challenge solutions and research on ambient lighting normalization.

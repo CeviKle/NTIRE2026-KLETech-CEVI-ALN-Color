@@ -120,14 +120,14 @@ for epoch in range(1, EPOCHS + 1):
     for sh, cr, gt in loader:
 
         sh = sh.to(DEVICE)
-        cr = cr.to(DEVICE)
         gt = gt.to(DEVICE)
 
         optimizer.zero_grad()
 
         with autocast(device_type="cuda"):
 
-            stage1, stage2 = model(sh, cr)
+            # FIXED MODEL CALL
+            stage1, stage2 = model(sh)
 
             loss_stage1 = charbonnier(stage1, gt)
             loss_stage2 = charbonnier(stage2, gt)

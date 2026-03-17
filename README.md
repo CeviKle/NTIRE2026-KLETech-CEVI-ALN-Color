@@ -169,30 +169,13 @@ Ensure:
 
 ---
 
-## 13. Team Information
-
-**Team Name:** KLETech-CEVI  
-
-**Team Leader:**  
-Saiprasad Meesiyawar  
-
-**Team Members:**  
-- Mohammed Yaseen  
-- Nikhil Akalwadi  
-- Ramesh Ashok Tabib  
-- Uma Mudenagudi  
-
-CodaBench Username: **jnzx78**
-
----
-
-## 14. References
+## 13. References
 
 * Bao et al., Frequency-Prior Enhanced Ambient Lighting Normalization (CVPRW 2025)
 * Vasluianu et al., Towards Image Ambient Lighting Normalization (ECCV 2024)
 
 ---
 
-## 15. Acknowledgement
+## 14. Acknowledgement
 
 This work is inspired by recent NTIRE challenge solutions and research on ambient lighting normalization.
